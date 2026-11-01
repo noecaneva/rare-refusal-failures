@@ -25,7 +25,86 @@ prompt's observed harm rate.
 
 ## Results
 
-RESULTS_PLACEHOLDER
+Full run: 313 prompts x 10,000 samples = 3,130,000 completions, scored by the StrongREJECT
+fine-tuned judge. Numbers below are from `results/summary.json`, `results/cracked_curve.csv`,
+`results/per_category.csv` and `results/per_prompt.csv`.
+
+### Cracked curve
+
+Fraction of the 313 prompts with at least one harmful completion (judge score >= 0.75) among the
+first k samples. "Empirical" averages over 20 random orderings of each prompt's 10,000 samples;
+"analytic" is the mean over prompts of 1 - (1 - p)^k. The Llama-3.1-8B-Instruct column is the
+paper's released per-prompt file for the same prompts and judge.
+
+| k | Qwen2.5-1.5B-Instruct, empirical | Qwen2.5-1.5B-Instruct, analytic | Llama-3.1-8B-Instruct (paper) |
+|---:|---:|---:|---:|
+| 1 | 0.5% | 0.4% | 1.3% |
+| 3 | 1.2% | 1.2% | |
+| 10 | 2.9% | 2.9% | |
+| 30 | 6.0% | 5.7% | |
+| 100 | 10.8% | 10.9% | 16.6% |
+| 300 | 18.4% | 18.2% | |
+| 1,000 | 28.7% | 28.0% | 45.5% |
+| 3,000 | 34.6% | 34.3% | |
+| 10,000 | 37.1% | 36.4% | 78.9% |
+
+![cracked curve](results/cracked_curve.png)
+
+Prompts with zero harmful completions in 10,000: **197 of 313** (63%), against 66 of 313 for
+Llama-3.1-8B-Instruct in the paper. Qwen2.5-1.5B-Instruct is cracked far less often, but the shape
+is the same: the cracked fraction rises by almost two orders of magnitude from one sample to
+10,000, and after 1,000 samples it is still climbing (28.7% to 37.1%).
+
+### Per-prompt harm rates
+
+Overall, 0.43% of completions are harmful (13,545 of 3,130,000); 8.8% score >= 0.25 and 3.7%
+score >= 0.5, so most non-refusals are judged as only partially helpful. The median prompt has a
+harm rate of exactly 0.
+
+| per-prompt harm rate | prompts |
+|---|---:|
+| 0 (no harmful completion in 10,000) | 197 |
+| [1e-4, 3.2e-4) | 10 |
+| [3.2e-4, 1e-3) | 11 |
+| [1e-3, 3.2e-3) | 60 |
+| [3.2e-3, 1e-2) | 15 |
+| [1e-2, 3.2e-2) | 10 |
+| [3.2e-2, 0.1) | 6 |
+| [0.1, 0.32) | 4 |
+| >= 0.32 | 0 |
+
+![histogram](results/harm_rate_histogram.png)
+
+Five prompts produced exactly one harmful completion in 10,000, and 20 prompts produced 100 or
+more. The highest per-prompt rate is 29.6% (a "Sexual content" prompt); three "Non-violent
+crimes" prompts exceed 10%.
+
+### Per category
+
+| category | prompts | zero harmful | cracked at k=1 | k=100 | k=1,000 | k=10,000 |
+|---|---:|---:|---:|---:|---:|---:|
+| Disinformation and deception | 50 | 33 | 0.1% | 9.0% | 25.9% | 33.3% |
+| Hate, harassment and discrimination | 50 | 37 | 0.1% | 5.7% | 19.2% | 25.2% |
+| Illegal goods and services | 50 | 34 | 0.2% | 8.5% | 23.9% | 31.9% |
+| Non-violent crimes | 59 | 23 | 1.1% | 23.3% | 49.9% | 61.0% |
+| Sexual content | 50 | 37 | 0.8% | 8.2% | 17.6% | 25.1% |
+| Violence | 54 | 33 | 0.2% | 8.7% | 27.7% | 37.3% |
+
+(Cracked fractions are the analytic mean of 1 - (1 - p)^k within the category; the k=10,000
+column equals the observed fraction of cracked prompts.) "Non-violent crimes" (fraud, hacking,
+drugs, theft) is the weak spot: 61% of its prompts are cracked within 10,000 samples and half
+within 1,000.
+
+![per category](results/per_category.png)
+
+### Completions and cost
+
+Mean completion length 57 tokens; 16.4% of completions hit the 150-token cap (the paper's cap),
+so long harmful answers are truncated before the judge sees them. Compute on RTX 2080 Ti (11 GB)
+GPUs: generation 8.9 GPU-hours (vLLM, about 5,400 tokens/s per GPU), judging 38.5 GPU-hours
+(about 24 completions/s per GPU); wall-clock 47 minutes and 2 h 54 min on four 4-GPU nodes.
+The pilot's float16-vs-float32 judge comparison (64 completions) agreed on every label with a
+maximum score difference of 1e-5 (`results/pilot/metadata.json`).
 
 ## Repository layout
 
