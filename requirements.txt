@@ -1,0 +1,20 @@
+# torch, vllm and transformers come from the cluster's vLLM module (see README); the versions
+# actually used are recorded in results/metadata.json. Everything else is installed into a venv
+# created with --system-site-packages on top of that module.
+#
+# Install order matters for strong_reject: it is installed without its own (unpinned) dependency
+# list so that it cannot pull a different transformers/torch; the dependencies it needs are below.
+datasets
+peft
+sentencepiece
+python-dotenv
+pandas
+numpy
+matplotlib
+tqdm
+litellm
+openai
+google-cloud-translate
+google-api-python-client
+strong_reject @ git+https://github.com/dsbowen/strong_reject.git@7a551d5b440ec7b75d4f6f5bb7c1719965b76b47
+pytest

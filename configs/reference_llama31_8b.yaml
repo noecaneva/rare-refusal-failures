@@ -1,0 +1,10 @@
+# Reference numbers for Llama-3.1-8B-Instruct from the paper's released per-prompt file
+# (Angell et al., arXiv 2604.22167), used only for the comparison column and plot overlay.
+model: meta-llama/Llama-3.1-8B-Instruct
+n_prompts: 313
+n_zero_harmful: 66
+cracked:
+  1: 0.013
+  100: 0.166
+  1000: 0.455
+  10000: 0.789

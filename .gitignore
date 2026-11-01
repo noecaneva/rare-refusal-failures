@@ -1,0 +1,16 @@
+# Raw completions, judge scores, model caches, environments and logs stay on $SCRATCH.
+data/
+logs/
+runs/
+*.jsonl
+*.jsonl.tmp
+hf_cache/
+xdg_cache/
+pip_cache/
+envs/
+tmp/
+slurm/local.sh
+__pycache__/
+*.pyc
+.pytest_cache/
+.claude/

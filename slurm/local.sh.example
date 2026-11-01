@@ -1,0 +1,4 @@
+# Copy to slurm/local.sh (git-ignored) and fill in. scripts/submit.sh sources it.
+export SLURM_ACCOUNT=your_account_name
+# export SBATCH_QOS=es_normal          # override the QoS in the job scripts if your site differs
+# export TAILRISK_ROOT=$SCRATCH/qwen_tailrisk
