@@ -32,6 +32,7 @@ judge:
   base_model: unsloth/gemma-2b              # ungated mirror, verified bit-identical to google/gemma-2b (see README)
   base_model_revision: 7ac9d201a57c8cdc6f939069fc0f044c60197a4a
   dtype: float16
+  attn_implementation: eager          # not sdpa: the fused fp16 kernel is wrong for padded batches on sm_75 (README)
   threshold: 0.75
   batch_size: 32
 analysis:

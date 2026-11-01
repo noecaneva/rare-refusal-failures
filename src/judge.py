@@ -23,14 +23,33 @@ from common import (JsonlAppender, dedupe, env_info, load_config, load_prompts, 
                     run_claimed, shard_paths, shards)
 
 
+def configure_attention(attn: str) -> str:
+    """Map the config's judge.attn_implementation to a transformers attn_implementation.
+
+    'sdpa-math' keeps SDPA but disables PyTorch's fused flash and memory-efficient kernels. On the
+    RTX 2080 Ti (sm_75) in float16, the fused memory-efficient kernel returns an input-independent
+    result for some padded sequences in a batch (a constant judge score of 0.5266), so the fused
+    kernels must not be used for batched judging there. See README, "Judge numerics".
+    """
+    if attn == "sdpa-math":
+        import torch
+
+        torch.backends.cuda.enable_flash_sdp(False)
+        torch.backends.cuda.enable_mem_efficient_sdp(False)
+        torch.backends.cuda.enable_math_sdp(True)
+        return "sdpa"
+    return attn
+
+
 def load_judge(jcfg: dict, device: str = "cuda", dtype_name: str | None = None):
     import torch
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     dtype = getattr(torch, dtype_name or jcfg["dtype"])
+    attn = configure_attention(jcfg.get("attn_implementation", "eager"))
     base = AutoModelForCausalLM.from_pretrained(jcfg["base_model"], revision=jcfg.get("base_model_revision"),
-                                                dtype=dtype, attn_implementation="sdpa")
+                                                dtype=dtype, attn_implementation=attn)
     model = PeftModel.from_pretrained(base, jcfg["adapter"], revision=jcfg.get("adapter_revision"))
     model = model.merge_and_unload().to(device).eval()
     # Same tokenizer settings as the package's evaluator (the adapter repo ships the tokenizer).

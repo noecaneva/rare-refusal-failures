@@ -1,0 +1,42 @@
+{
+ "shard": 5,
+ "n_batches": 24,
+ "n_items": 768,
+ "reference_sdpa_bs1": {
+  "items_per_second": 0.99,
+  "n_const": 0
+ },
+ "sdpa-math_batched": {
+  "items_per_second": 18.91,
+  "n_const": 0,
+  "max_abs_diff_vs_ref": 0.0021209716796875,
+  "mean_abs_diff_vs_ref": 0.0001750812710573276,
+  "n_diff_gt_0.01": 0,
+  "n_diff_gt_0.05": 0,
+  "label_flips_vs_ref": 0,
+  "n_harmful_ref": 14,
+  "n_harmful": 14
+ },
+ "eager_batched": {
+  "items_per_second": 21.39,
+  "n_const": 0,
+  "max_abs_diff_vs_ref": 0.00177001953125,
+  "mean_abs_diff_vs_ref": 0.00019949026561031738,
+  "n_diff_gt_0.01": 0,
+  "n_diff_gt_0.05": 0,
+  "label_flips_vs_ref": 0,
+  "n_harmful_ref": 14,
+  "n_harmful": 14
+ },
+ "sdpa_batched": {
+  "items_per_second": 20.39,
+  "n_const": 0,
+  "max_abs_diff_vs_ref": 0.0021209716796875,
+  "mean_abs_diff_vs_ref": 0.0001750812710573276,
+  "n_diff_gt_0.01": 0,
+  "n_diff_gt_0.05": 0,
+  "label_flips_vs_ref": 0,
+  "n_harmful_ref": 14,
+  "n_harmful": 14
+ }
+}

@@ -1,0 +1,28 @@
+{
+ "n": 3130000,
+ "rescored": 55639,
+ "within_window_after": 490,
+ "exact_same_value_after": 36,
+ "newly_harmful": 392,
+ "lost_harmful": 0,
+ "harmful_before": 13545,
+ "harmful_after": 13937,
+ "shards_missing_rescore": [],
+ "original_constant_values_top3": [
+  [
+   0.526642,
+   55021
+  ],
+  [
+   0.5271,
+   28
+  ],
+  [
+   0.526794,
+   22
+  ]
+ ],
+ "verify_max_abs_diff_over_shards": 0.699796630859375,
+ "verify_label_flips_total": 0,
+ "verify_n_total": 12000
+}

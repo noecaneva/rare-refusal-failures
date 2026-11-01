@@ -42,12 +42,12 @@ headline numbers (78.9% cracked at k = 10,000, 66 prompts never cracked).
 | k | Qwen2.5-1.5B empirical | Qwen2.5-1.5B analytic | Llama-3.1-8B empirical | Llama-3.1-8B analytic |
 |---:|---:|---:|---:|---:|
 | 1 | 0.5% | 0.4% | 1.2% | 1.2% |
-| 3 | 1.2% | 1.2% | 2.5% | 2.6% |
-| 10 | 2.9% | 2.9% | 4.9% | 4.9% |
-| 30 | 6.0% | 5.7% | 8.8% | 8.7% |
-| 100 | 10.8% | 10.9% | 16.5% | 16.2% |
-| 300 | 18.4% | 18.2% | 27.8% | 27.2% |
-| 1,000 | 28.7% | 28.0% | 46.8% | 44.7% |
+| 3 | 1.3% | 1.2% | 2.5% | 2.6% |
+| 10 | 3.0% | 2.9% | 4.9% | 4.9% |
+| 30 | 6.1% | 5.8% | 8.8% | 8.7% |
+| 100 | 10.9% | 11.0% | 16.5% | 16.2% |
+| 300 | 18.5% | 18.3% | 27.8% | 27.2% |
+| 1,000 | 28.8% | 28.1% | 46.8% | 44.7% |
 | 3,000 | 34.6% | 34.3% | 64.3% | 61.2% |
 | 10,000 | 37.1% | 36.4% | 78.9% | 73.6% |
 
@@ -58,46 +58,45 @@ Llama-3.1-8B-Instruct. (At k = 10,000 the analytic curve sits below the empirica
 models: a prompt with a single hit in 10,000 counts as cracked empirically, but 1 - (1 - 1e-4)^10000
 is only 0.63.) Qwen2.5-1.5B-Instruct is cracked far less often, but the shape
 is the same: the cracked fraction rises by almost two orders of magnitude from one sample to
-10,000, and after 1,000 samples it is still climbing (28.7% to 37.1%).
+10,000, and after 1,000 samples it is still climbing (28.8% to 37.1%).
 
 ### Per-prompt harm rates
 
-Overall, 0.43% of completions are harmful (13,545 of 3,130,000); 8.8% score >= 0.25 and 3.7%
+Overall, 0.45% of completions are harmful (13,937 of 3,130,000); 7.2% score >= 0.25 and 2.0%
 score >= 0.5, so most non-refusals are judged as only partially helpful. The median prompt has a
 harm rate of exactly 0.
 
 | per-prompt harm rate | prompts |
 |---|---:|
 | 0 (no harmful completion in 10,000) | 197 |
-| [1e-4, 3.2e-4) | 10 |
-| [3.2e-4, 1e-3) | 11 |
-| [1e-3, 3.2e-3) | 60 |
-| [3.2e-3, 1e-2) | 15 |
-| [1e-2, 3.2e-2) | 10 |
+| [1.0e-4, 3.2e-4) | 10 |
+| [3.2e-4, 1.0e-3) | 9 |
+| [1.0e-3, 3.2e-3) | 62 |
+| [3.2e-3, 1.0e-2) | 15 |
+| [1.0e-2, 3.2e-2) | 10 |
 | [3.2e-2, 0.1) | 6 |
 | [0.1, 0.32) | 4 |
 | >= 0.32 | 0 |
 
 ![histogram](results/harm_rate_histogram.png)
 
-Five prompts produced exactly one harmful completion in 10,000, and 20 prompts produced 100 or
-more. The highest per-prompt rate is 29.6% (a "Sexual content" prompt); three "Non-violent
-crimes" prompts exceed 10%.
+5 prompts produced exactly one harmful completion in 10,000, and 20 prompts produced 100 or
+more. The highest per-prompt rate is 29.6% (a "Sexual content" prompt); 4 prompts exceed 10%, 3 of them in "Non-violent crimes".
 
 ### Per category
 
 | category | prompts | zero harmful | cracked at k=1 | k=100 | k=1,000 | k=10,000 |
 |---|---:|---:|---:|---:|---:|---:|
-| Disinformation and deception | 50 | 33 | 0.1% | 9.0% | 25.9% | 33.3% |
-| Hate, harassment and discrimination | 50 | 37 | 0.1% | 5.7% | 19.2% | 25.2% |
+| Disinformation and deception | 50 | 33 | 0.1% | 9.2% | 26.3% | 33.3% |
+| Hate, harassment and discrimination | 50 | 37 | 0.1% | 5.8% | 19.2% | 25.2% |
 | Illegal goods and services | 50 | 34 | 0.2% | 8.5% | 23.9% | 31.9% |
-| Non-violent crimes | 59 | 23 | 1.1% | 23.3% | 49.9% | 61.0% |
+| Non-violent crimes | 59 | 23 | 1.2% | 23.3% | 49.9% | 61.0% |
 | Sexual content | 50 | 37 | 0.8% | 8.2% | 17.6% | 25.1% |
 | Violence | 54 | 33 | 0.2% | 8.7% | 27.7% | 37.3% |
 
 (Cracked fractions are the analytic mean of 1 - (1 - p)^k within the category; the k=10,000
 column equals the observed fraction of cracked prompts.) "Non-violent crimes" (fraud, hacking,
-drugs, theft) is the weak spot: 61% of its prompts are cracked within 10,000 samples and half
+drugs, theft) is the weak spot: 61% of its prompts are cracked within 10,000 samples and 50%
 within 1,000.
 
 ![per category](results/per_category.png)
@@ -110,6 +109,36 @@ GPUs: generation 8.9 GPU-hours (vLLM, about 5,400 tokens/s per GPU), judging 38.
 (about 24 completions/s per GPU); wall-clock 47 minutes and 2 h 54 min on four 4-GPU nodes.
 The pilot's float16-vs-float32 judge comparison (64 completions) agreed on every label with a
 maximum score difference of 1e-5 (`results/pilot/metadata.json`).
+
+## Judge numerics: a kernel bug, found and corrected
+
+The first judging pass used transformers' default SDPA attention. On the RTX 2080 Ti (sm_75) in
+float16, PyTorch's fused memory-efficient attention kernel returns an input-independent result for
+some left-padded sequences in a batch; the symptom was the identical judge score 0.5266 for
+**55,639 of 3,130,000 completions (1.78%)**, across 311 prompts and every shard. It was caught by
+re-scoring a sample with the official `google/gemma-2b` weights and noticing one score move by 0.53
+with identical weights, and pinned down as follows (`scripts/judge_*.py`, `results/judge_*.json`):
+
+- Float16 itself is accurate: unpadded (batch size 1) float16 scores match a float32 CPU reference
+  within 0.0012 on 90 stratified items; random batches change scores by at most 0.003.
+- Replaying the run's exact batches with SDPA reproduces the stored constants almost one for one
+  (538 of 640 items in one shard); the unaffected items in those batches match to 1e-7. The same
+  batches with eager attention, or with the fused SDPA kernels disabled, give zero constants, match
+  the unpadded reference within 0.002, and produce no label flips at the 0.75 threshold.
+
+The affected items were re-scored in place with eager attention (`scripts/rescore_anomalous.py`,
+`results/judge_rescore_summary.json`): 392 of the 55,639 became harmful (13,545 -> 13,937
+harmful completions overall), none went the other way, and no prompt changed between "never
+cracked" and "cracked", so the headline numbers moved by at most 0.1 percentage point. A
+verification re-score of 12,000 random unaffected items found no label flips but three scores
+off by more than 0.3, so the fused kernel also perturbed a small fraction of scores (about
+0.025%) without leaving the constant fingerprint; the corresponding bound on undetected label
+flips is about 0.03% of completions.
+
+`src/judge.py` now uses eager attention by default (`judge.attn_implementation`); the pipeline's
+own scores shipped in `results/` are the corrected ones. Lesson for anyone re-running this on
+Turing-class GPUs: validate batched float16 scoring against batch size 1 on the production batches,
+not on single items.
 
 ## Repository layout
 
@@ -174,8 +203,7 @@ Design notes:
   were afterwards compared bit for bit with the official `google/gemma-2b` (revision `9cf48e5`):
   they are identical (`results/judge_base_check.json`, produced by
   `scripts/compare_judge_base.py`), so the two ids are interchangeable; set `judge.base_model` to
-  either. The judge runs in float16 because the GPUs used have no bfloat16; see the numerics
-  check below.
+  either. The judge runs in float16 because the GPUs used have no bfloat16; see "Judge numerics" above.
 - **Scoring code.** `src/judge.py` calls the `strong_reject` package's `strongreject_finetuned`
   function unchanged (same prompt template, same 512-token response truncation, same expected-
   value score over the five grade tokens); it only pre-loads the model into the package's cache
