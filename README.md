@@ -41,38 +41,38 @@ headline numbers (78.9% cracked at k = 10,000, 66 prompts never cracked).
 
 | k | Qwen2.5-1.5B empirical | Qwen2.5-1.5B analytic | Llama-3.1-8B empirical | Llama-3.1-8B analytic |
 |---:|---:|---:|---:|---:|
-| 1 | 0.5% | 0.4% | 1.2% | 1.2% |
-| 3 | 1.3% | 1.2% | 2.5% | 2.6% |
-| 10 | 3.0% | 2.9% | 4.9% | 4.9% |
-| 30 | 6.1% | 5.8% | 8.8% | 8.7% |
-| 100 | 10.9% | 11.0% | 16.5% | 16.2% |
-| 300 | 18.5% | 18.3% | 27.8% | 27.2% |
-| 1,000 | 28.8% | 28.1% | 46.8% | 44.7% |
-| 3,000 | 34.6% | 34.3% | 64.3% | 61.2% |
-| 10,000 | 37.1% | 36.4% | 78.9% | 73.6% |
+| 1 | 0.3% | 0.4% | 1.2% | 1.2% |
+| 3 | 1.0% | 1.2% | 2.5% | 2.6% |
+| 10 | 3.0% | 3.0% | 4.9% | 4.9% |
+| 30 | 5.8% | 5.8% | 8.8% | 8.7% |
+| 100 | 11.0% | 11.0% | 16.5% | 16.2% |
+| 300 | 17.9% | 18.3% | 27.8% | 27.2% |
+| 1,000 | 28.6% | 28.0% | 46.8% | 44.7% |
+| 3,000 | 34.6% | 34.0% | 64.3% | 61.2% |
+| 10,000 | 36.7% | 36.1% | 78.9% | 73.6% |
 
 ![cracked curve](results/cracked_curve.png)
 
-Prompts with zero harmful completions in 10,000: **197 of 313** (63%), against 66 of 313 for
+Prompts with zero harmful completions in 10,000: **198 of 313** (63%), against 66 of 313 for
 Llama-3.1-8B-Instruct. (At k = 10,000 the analytic curve sits below the empirical one for both
 models: a prompt with a single hit in 10,000 counts as cracked empirically, but 1 - (1 - 1e-4)^10000
 is only 0.63.) Qwen2.5-1.5B-Instruct is cracked far less often, but the shape
 is the same: the cracked fraction rises by almost two orders of magnitude from one sample to
-10,000, and after 1,000 samples it is still climbing (28.8% to 37.1%).
+10,000, and after 1,000 samples it is still climbing (28.6% to 36.7%).
 
 ### Per-prompt harm rates
 
-Overall, 0.45% of completions are harmful (13,937 of 3,130,000); 7.2% score >= 0.25 and 2.0%
+Overall, 0.45% of completions are harmful (14,069 of 3,130,000); 7.2% score >= 0.25 and 2.0%
 score >= 0.5, so most non-refusals are judged as only partially helpful. The median prompt has a
 harm rate of exactly 0.
 
 | per-prompt harm rate | prompts |
 |---|---:|
-| 0 (no harmful completion in 10,000) | 197 |
+| 0 (no harmful completion in 10,000) | 198 |
 | [1.0e-4, 3.2e-4) | 10 |
-| [3.2e-4, 1.0e-3) | 9 |
-| [1.0e-3, 3.2e-3) | 62 |
-| [3.2e-3, 1.0e-2) | 15 |
+| [3.2e-4, 1.0e-3) | 8 |
+| [1.0e-3, 3.2e-3) | 61 |
+| [3.2e-3, 1.0e-2) | 16 |
 | [1.0e-2, 3.2e-2) | 10 |
 | [3.2e-2, 0.1) | 6 |
 | [0.1, 0.32) | 4 |
@@ -87,10 +87,10 @@ more. The highest per-prompt rate is 29.6% (a "Sexual content" prompt); 4 prompt
 
 | category | prompts | zero harmful | cracked at k=1 | k=100 | k=1,000 | k=10,000 |
 |---|---:|---:|---:|---:|---:|---:|
-| Disinformation and deception | 50 | 33 | 0.1% | 9.2% | 26.3% | 33.3% |
-| Hate, harassment and discrimination | 50 | 37 | 0.1% | 5.8% | 19.2% | 25.2% |
+| Disinformation and deception | 50 | 34 | 0.1% | 9.1% | 25.3% | 31.3% |
+| Hate, harassment and discrimination | 50 | 37 | 0.1% | 5.9% | 19.2% | 25.2% |
 | Illegal goods and services | 50 | 34 | 0.2% | 8.5% | 23.9% | 31.9% |
-| Non-violent crimes | 59 | 23 | 1.2% | 23.3% | 49.9% | 61.0% |
+| Non-violent crimes | 59 | 23 | 1.2% | 23.4% | 50.0% | 61.0% |
 | Sexual content | 50 | 37 | 0.8% | 8.2% | 17.6% | 25.1% |
 | Violence | 54 | 33 | 0.2% | 8.7% | 27.7% | 37.3% |
 
@@ -105,8 +105,9 @@ within 1,000.
 
 Mean completion length 57 tokens; 16.4% of completions hit the 150-token cap (the paper's cap),
 so long harmful answers are truncated before the judge sees them. Compute on RTX 2080 Ti (11 GB)
-GPUs: generation 8.9 GPU-hours (vLLM, about 5,400 tokens/s per GPU), judging 38.5 GPU-hours
-(about 24 completions/s per GPU); wall-clock 47 minutes and 2 h 54 min on four 4-GPU nodes.
+GPUs: generation 8.9 GPU-hours (vLLM, about 5,400 tokens/s per GPU); judging 37.5 GPU-hours for the
+final eager-attention pass (19 to 26 completions/s per GPU), plus 38.5 GPU-hours for the discarded
+SDPA pass; wall-clock 47 minutes and 2 h 52 min on four 4-GPU nodes.
 The pilot's float16-vs-float32 judge comparison (64 completions) agreed on every label with a
 maximum score difference of 1e-5 (`results/pilot/metadata.json`).
 
@@ -126,14 +127,27 @@ with identical weights, and pinned down as follows (`scripts/judge_*.py`, `resul
   batches with eager attention, or with the fused SDPA kernels disabled, give zero constants, match
   the unpadded reference within 0.002, and produce no label flips at the 0.75 threshold.
 
-The affected items were re-scored in place with eager attention (`scripts/rescore_anomalous.py`,
-`results/judge_rescore_summary.json`): 392 of the 55,639 became harmful (13,545 -> 13,937
-harmful completions overall), none went the other way, and no prompt changed between "never
-cracked" and "cracked", so the headline numbers moved by at most 0.1 percentage point. A
-verification re-score of 12,000 random unaffected items found no label flips but three scores
-off by more than 0.3, so the fused kernel also perturbed a small fraction of scores (about
-0.025%) without leaving the constant fingerprint; the corresponding bound on undetected label
-flips is about 0.03% of completions.
+Two corrections were made. First, the 55,639 constant-valued items were re-scored in place
+with eager attention (`scripts/rescore_anomalous.py`); 392 of them turned out to be harmful. A
+verification re-score of 12,000 random unaffected items then found three scores off by more than
+0.3 with no constant fingerprint, i.e. the fused kernel had also perturbed a small fraction of
+other scores. So, second, **all 3,130,000 completions were re-judged from scratch with eager
+attention**, and those are the scores every number in this README is computed from. Comparing
+the two complete passes item by item (`scripts/compare_passes.py`,
+`results/judge_pass_comparison.json`):
+
+| | SDPA pass (uncorrected) | eager pass (final) |
+|---|---:|---:|
+| harmful completions (score >= 0.75) | 13,545 | 14,069 |
+| items whose score differs by > 0.05 between passes | 55,353 | |
+| label flips not-harmful -> harmful | | 539 |
+| label flips harmful -> not-harmful | | 15 |
+| prompts never cracked | 197 | 198 |
+| median absolute score difference | | 4e-06 |
+
+Of the 539 completions that became harmful, 392 had carried the constant and 147 had carried an
+ordinary-looking but wrong score. One prompt lost its single harmful completion and moved to
+"never cracked". The headline curve moved by at most 0.5 percentage point.
 
 `src/judge.py` now uses eager attention by default (`judge.attn_implementation`); the pipeline's
 own scores shipped in `results/` are the corrected ones. Lesson for anyone re-running this on

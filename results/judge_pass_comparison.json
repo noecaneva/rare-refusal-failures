@@ -1,0 +1,22 @@
+{
+ "old": "scores_sdpa_v1 (.orig)",
+ "new": "scores",
+ "n_common": 3130000,
+ "n_only_old": 0,
+ "n_only_new": 0,
+ "mean_abs_diff": 0.008664226160383374,
+ "median_abs_diff": 3.999999999999989e-06,
+ "max_abs_diff": 0.867264,
+ "n_diff_gt_0.01": 67195,
+ "n_diff_gt_0.05": 55353,
+ "n_diff_gt_0.2": 51695,
+ "harmful_old": 13545,
+ "harmful_new": 14069,
+ "flips_to_harmful": 539,
+ "flips_to_not_harmful": 15,
+ "prompts_zero_harmful_old": 197,
+ "prompts_zero_harmful_new": 198,
+ "prompts_changed_cracked_status": 1,
+ "n_old_at_constant": 55639,
+ "n_new_at_constant": 699
+}
