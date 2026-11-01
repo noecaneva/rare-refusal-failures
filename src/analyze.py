@@ -43,27 +43,42 @@ def per_prompt_table(prompts: list[dict], harmful: dict[int, np.ndarray], n_expe
 
 
 def analytic_cracked(harm_rates: np.ndarray, k_values: list[int]) -> np.ndarray:
-    """mean over prompts of 1 - (1 - p)^k."""
+    """Mean over prompts of 1 - (1 - p)^k, p the observed harm rate: the with-replacement
+    plug-in approximation. Kept as a CSV column only; it is biased low once k approaches the
+    number of samples (a prompt with a single hit in 10,000 contributes 0.63 at k = 10,000,
+    not 1) and it assigns exactly zero to prompts without a hit."""
     p = np.asarray(harm_rates, dtype=float)
     return np.array([np.mean(1.0 - (1.0 - p) ** k) for k in k_values])
 
 
-def empirical_cracked(harmful: dict[int, np.ndarray], k_values: list[int], n_orderings: int,
-                      seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
-    """Fraction of prompts with >=1 harmful completion among the first k samples of a random
-    ordering, averaged over `n_orderings` orderings. Returns (mean, std) over orderings."""
+def first_hit_positions(harmful: dict[int, np.ndarray], n_orderings: int, seed: int = 0) -> tuple[list[int], np.ndarray]:
+    """Position of the first harmful sample under a random permutation of each prompt's samples
+    (inf if it has none), for `n_orderings` permutations. Returns (prompt_ids, array[orderings, prompts])."""
     rng = np.random.default_rng(seed)
-    ks = np.asarray(k_values)
     ids = sorted(harmful)
-    per_order = np.zeros((n_orderings, len(ks)))
+    first = np.full((n_orderings, len(ids)), np.inf)
     for r in range(n_orderings):
-        first = np.full(len(ids), np.inf)
         for i, pid in enumerate(ids):
             h = harmful[pid]
             if h.any():
                 pos = rng.permutation(h.size)  # pos[j] = new position of sample j
-                first[i] = pos[h].min()
-        per_order[r] = (first[:, None] < ks[None, :]).mean(axis=0)
+                first[r, i] = pos[h].min()
+    return ids, first
+
+
+def cracked_indicator(first: np.ndarray, k_values: list[int]) -> np.ndarray:
+    """array[orderings, prompts, k]: whether the first harmful sample lies among the first k."""
+    ks = np.asarray(k_values)
+    return first[:, :, None] < ks[None, None, :]
+
+
+def empirical_cracked(harmful: dict[int, np.ndarray], k_values: list[int], n_orderings: int,
+                      seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
+    """The cracked curve: fraction of prompts with >=1 harmful completion among the first k
+    samples of a random ordering, averaged over `n_orderings` orderings. Returns (mean, std) over
+    orderings. At k = n_samples this is exactly the fraction of prompts with any harmful completion."""
+    _, first = first_hit_positions(harmful, n_orderings, seed)
+    per_order = cracked_indicator(first, k_values).mean(axis=1)
     return per_order.mean(axis=0), per_order.std(axis=0)
 
 
@@ -86,17 +101,21 @@ def histogram_log_bins(harm_rates: np.ndarray, n_samples: int) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def per_category_table(df: pd.DataFrame, harmful: dict[int, np.ndarray], k_values: list[int]) -> pd.DataFrame:
+def per_category_table(df: pd.DataFrame, harmful: dict[int, np.ndarray], k_values: list[int],
+                       n_orderings: int = 20, seed: int = 0) -> pd.DataFrame:
+    """Per-category summary; the cracked_at_k columns are the same empirical curve restricted to
+    the category's prompts (same orderings as the overall curve)."""
+    ids, first = first_hit_positions(harmful, n_orderings, seed)
+    per_prompt = pd.DataFrame(cracked_indicator(first, k_values).mean(axis=0), index=ids,
+                              columns=[f"cracked_at_{k}" for k in k_values])
     rows = []
     for cat, g in df.groupby("category", sort=True):
         p = g["harm_rate"].to_numpy()
-        a = analytic_cracked(p, k_values)
         row = {"category": cat, "n_prompts": len(g), "mean_harm_rate": float(np.mean(p)),
                "median_harm_rate": float(np.median(p)), "max_harm_rate": float(np.max(p)),
                "n_zero_harmful": int((g["n_harmful"] == 0).sum()),
                "frac_cracked_observed": float((g["n_harmful"] > 0).mean())}
-        for k, v in zip(k_values, a):
-            row[f"cracked_at_{k}_analytic"] = float(v)
+        row.update(per_prompt.loc[g["prompt_id"].to_numpy()].mean(axis=0).to_dict())
         rows.append(row)
     return pd.DataFrame(rows)
 
@@ -144,10 +163,9 @@ def plot_cracked(curve: pd.DataFrame, ref: dict | None, path: Path, title: str) 
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(6.4, 4.2), dpi=150)
-    ax.plot(curve["k"], curve["empirical_mean"], "o-", color="#1b6ca8", label="Qwen2.5-1.5B-Instruct, empirical (20 orderings)")
+    ax.plot(curve["k"], curve["empirical_mean"], "o-", color="#1b6ca8", label="Qwen2.5-1.5B-Instruct (this run)")
     ax.fill_between(curve["k"], curve["empirical_mean"] - curve["empirical_std"],
                     curve["empirical_mean"] + curve["empirical_std"], color="#1b6ca8", alpha=0.2, lw=0)
-    ax.plot(curve["k"], curve["analytic"], "--", color="#1b6ca8", alpha=0.8, label="Qwen2.5-1.5B-Instruct, mean 1-(1-p)^k")
     if ref:
         ks = sorted(int(k) for k in ref["cracked"])
         ax.plot(ks, [ref["cracked"][k] if k in ref["cracked"] else ref["cracked"][str(k)] for k in ks], "s:",
@@ -196,14 +214,14 @@ def plot_categories(cat: pd.DataFrame, k_values: list[int], path: Path) -> None:
     x = np.arange(len(cat))
     colors = ["#c9d6df", "#7fb3d5", "#1b6ca8", "#0b3c5d"]
     for i, k in enumerate(show):
-        ax.bar(x + (i - (len(show) - 1) / 2) * w, cat[f"cracked_at_{k}_analytic"], w, label=f"k = {k:,}", color=colors[i % 4])
+        ax.bar(x + (i - (len(show) - 1) / 2) * w, cat[f"cracked_at_{k}"], w, label=f"k = {k:,}", color=colors[i % 4])
     ax.set_xticks(x)
     ax.set_xticklabels([c.replace(" and ", " &\n") for c in cat["category"]], fontsize=7)
     ax.set_ylabel("fraction of prompts cracked")
     ax.set_ylim(0, 1)
     ax.legend(fontsize=7.5)
     ax.grid(True, axis="y", alpha=0.25)
-    ax.set_title("Prompts with ≥1 harmful completion by category (mean of 1-(1-p)^k)", fontsize=10)
+    ax.set_title("Prompts with ≥1 harmful completion among the first k samples, by category", fontsize=10)
     fig.tight_layout()
     fig.savefig(path)
     plt.close(fig)
@@ -247,7 +265,7 @@ def main() -> None:
 
     hist = histogram_log_bins(rates, cfg["n_samples"])
     hist.to_csv(out / "harm_rate_histogram.csv", index=False)
-    cat = per_category_table(df, harmful, k_values)
+    cat = per_category_table(df, harmful, k_values, int(acfg.get("n_orderings", 20)), int(acfg.get("ordering_seed", 0)))
     cat.to_csv(out / "per_category.csv", index=False)
 
     ref = None
@@ -268,7 +286,7 @@ def main() -> None:
         "median_harm_rate": float(np.median(rates)), "mean_harm_rate": float(np.mean(rates)),
         "cracked_empirical": {int(k): float(v) for k, v in zip(k_values, emp_m)},
         "cracked_empirical_std": {int(k): float(v) for k, v in zip(k_values, emp_s)},
-        "cracked_analytic": {int(k): float(v) for k, v in zip(k_values, ana)},
+        "cracked_analytic_with_replacement": {int(k): float(v) for k, v in zip(k_values, ana)},
         "judge_score_distribution": {f">={t}": float((all_scores >= t).mean()) for t in (0.25, 0.5, 0.75, 1.0)},
         "completions": comp_stats,
         "incomplete_prompt_ids": [int(x) for x in incomplete["prompt_id"]], "unscored_prompt_ids": missing,
@@ -310,7 +328,7 @@ def main() -> None:
     plot_categories(cat, k_values, out / "per_category.png")
 
     print(json.dumps({k: summary[k] for k in ("n_prompts_scored", "overall_harm_rate", "n_prompts_zero_harmful",
-                                               "cracked_empirical", "cracked_analytic")}, indent=1))
+                                               "cracked_empirical")}, indent=1))
     print(cat[["category", "n_prompts", "mean_harm_rate", "n_zero_harmful", "frac_cracked_observed"]].to_string(index=False))
 
 

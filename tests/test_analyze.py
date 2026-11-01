@@ -76,4 +76,7 @@ def test_per_category():
     a = cat.set_index("category")
     assert a.loc["A", "n_prompts"] == 2 and a.loc["A", "n_zero_harmful"] == 1
     assert a.loc["B", "frac_cracked_observed"] == 1.0
-    assert abs(a.loc["B", "cracked_at_1000_analytic"] - (1 - (1 - 0.002) ** 1000)) < 1e-12
+    # B's only prompt has 2 hits in 1000: always cracked at k = N, never at k = 1
+    assert a.loc["B", "cracked_at_1000"] == 1.0 and a.loc["B", "cracked_at_1"] == 0.0
+    assert abs(a.loc["A", "cracked_at_1000"] - 0.5) < 1e-12  # one of A's two prompts has hits
+    assert 0.0 < a.loc["A", "cracked_at_1"] < 0.5

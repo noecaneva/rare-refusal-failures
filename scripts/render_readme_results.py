@@ -36,9 +36,8 @@ def main() -> None:
     n_any = summ["n_prompts_any_harmful"]
 
     # 1. cracked-curve table
-    rows = "\n".join(f"| {k:,} | {pct(cur.loc[k, 'empirical_mean'])} | {pct(cur.loc[k, 'analytic'])} | "
-                     f"{pct(ref.loc[k, 'empirical_mean'])} | {pct(ref.loc[k, 'analytic'])} |" for k in cur.index)
-    s = re.sub(r"(\| k \| Qwen2\.5-1\.5B empirical \|.*?\n\|---:\|---:\|---:\|---:\|---:\|\n)(?:\|.*\n)+",
+    rows = "\n".join(f"| {k:,} | {pct(cur.loc[k, 'empirical_mean'])} | {pct(ref.loc[k, 'empirical_mean'])} |" for k in cur.index)
+    s = re.sub(r"(\| k \| Qwen2\.5-1\.5B-Instruct \|.*?\n\|---:\|---:\|---:\|\n)(?:\|.*\n)+",
                lambda m: m.group(1) + rows + "\n", s)
 
     # 2. headline sentences
@@ -74,15 +73,15 @@ def main() -> None:
                f"{len(over10)} prompts exceed 10%, {cats_over10.iloc[0]} of them in \"{cats_over10.index[0]}\".", s, flags=re.S)
 
     # 4. per-category table
-    crows = "\n".join(f"| {r['category']} | {int(r['n_prompts'])} | {int(r['n_zero_harmful'])} | {pct(r['cracked_at_1_analytic'])} | "
-                      f"{pct(r['cracked_at_100_analytic'])} | {pct(r['cracked_at_1000_analytic'])} | {pct(r['cracked_at_10000_analytic'])} |"
+    crows = "\n".join(f"| {r['category']} | {int(r['n_prompts'])} | {int(r['n_zero_harmful'])} | {pct(r['cracked_at_1'])} | "
+                      f"{pct(r['cracked_at_100'])} | {pct(r['cracked_at_1000'])} | {pct(r['cracked_at_10000'])} |"
                       for _, r in cat.iterrows())
     s = re.sub(r"(\| category \| prompts \| zero harmful \| cracked at k=1 \| k=100 \| k=1,000 \| k=10,000 \|\n\|---\|---:\|---:\|---:\|---:\|---:\|---:\|\n)(?:\|.*\n)+",
                lambda m: m.group(1) + crows + "\n", s)
     nv = cat.set_index("category").loc["Non-violent crimes"]
-    s = re.sub(r"drugs, theft\) is the weak spot: \d+% of its prompts are cracked within 10,000 samples and half\nwithin 1,000\.",
-               f"drugs, theft) is the weak spot: {nv['cracked_at_10000_analytic'] * 100:.0f}% of its prompts are cracked within 10,000 samples and "
-               f"{nv['cracked_at_1000_analytic'] * 100:.0f}%\nwithin 1,000.", s)
+    s = re.sub(r"drugs, theft\) is the weak spot: \d+% of its prompts are cracked within 10,000 samples and \d+%\nwithin 1,000\.",
+               f"drugs, theft) is the weak spot: {nv['cracked_at_10000'] * 100:.0f}% of its prompts are cracked within 10,000 samples and "
+               f"{nv['cracked_at_1000'] * 100:.0f}%\nwithin 1,000.", s)
     (ROOT / "README.md").write_text(s)
     print("README results refreshed:", n_zero, "zero-harmful;", pct(cur.loc[10000, "empirical_mean"]), "cracked at 10k")
 
