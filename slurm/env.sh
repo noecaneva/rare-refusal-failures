@@ -5,6 +5,9 @@ export TAILRISK_ROOT=${TAILRISK_ROOT:-$SCRATCH/qwen_tailrisk}
 export HF_HOME=$TAILRISK_ROOT/hf_cache
 export HF_DATASETS_CACHE=$HF_HOME/datasets
 export HF_HUB_DISABLE_TELEMETRY=1
+# A Hugging Face token (only needed for the gated judge base google/gemma-2b) stays in the home
+# directory, not in the scratch cache: `hf auth login` with HF_HOME unset writes it here.
+export HF_TOKEN_PATH=${HF_TOKEN_PATH:-$HOME/.cache/huggingface/token}
 export PIP_CACHE_DIR=$TAILRISK_ROOT/pip_cache
 export XDG_CACHE_HOME=$TAILRISK_ROOT/xdg_cache
 export TRITON_CACHE_DIR=$XDG_CACHE_HOME/triton

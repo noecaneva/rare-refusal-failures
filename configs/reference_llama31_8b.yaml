@@ -1,10 +1,17 @@
-# Reference numbers for Llama-3.1-8B-Instruct from the paper's released per-prompt file
-# (Angell et al., arXiv 2604.22167), used only for the comparison column and plot overlay.
+# Reference curve for Llama-3.1-8B-Instruct, computed by scripts/reference_from_paper.py from the
+# paper's released per-prompt judge scores (empirical, 20 orderings). Used for the plot overlay.
 model: meta-llama/Llama-3.1-8B-Instruct
+source: rangell/mc_estimates/strong_reject/Llama-3.1-8B-Instruct_mc_est_10k.json (Angell
+  et al., arXiv 2604.22167), re-analysed with src/analyze.py at the same threshold
 n_prompts: 313
 n_zero_harmful: 66
 cracked:
-  1: 0.013
-  100: 0.166
-  1000: 0.455
-  10000: 0.789
+  1: 0.0117
+  3: 0.0252
+  10: 0.049
+  30: 0.0879
+  100: 0.1645
+  300: 0.2781
+  1000: 0.4677
+  3000: 0.6427
+  10000: 0.7891

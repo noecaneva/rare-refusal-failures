@@ -29,7 +29,7 @@ judge:
   evaluator: strongreject_finetuned         # name of the strong_reject evaluator being reproduced
   adapter: qylu4156/strongreject-15k-v1     # the StrongREJECT fine-tuned judge (LoRA on Gemma-2B)
   adapter_revision: 4bd893d32390d2cace4f067dc2e3ef5294fd78a2
-  base_model: unsloth/gemma-2b              # ungated mirror of google/gemma-2b (gated); see README
+  base_model: unsloth/gemma-2b              # ungated mirror, verified bit-identical to google/gemma-2b (see README)
   base_model_revision: 7ac9d201a57c8cdc6f939069fc0f044c60197a4a
   dtype: float16
   threshold: 0.75

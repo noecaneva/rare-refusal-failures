@@ -1,0 +1,25 @@
+{
+ "run_base": "unsloth/gemma-2b",
+ "run_base_revision": "7ac9d201a57c8cdc6f939069fc0f044c60197a4a",
+ "official": "google/gemma-2b",
+ "official_revision": "9cf48e52b224239de00d483ec8eb84fb8d0f3a3a",
+ "weights": {
+  "n_tensors_a": 164,
+  "n_tensors_b": 164,
+  "n_equal": 164,
+  "only_in_a": [],
+  "only_in_b": [],
+  "dtype_differences": [],
+  "differing_tensors": [],
+  "identical": true,
+  "seconds": 97.9
+ },
+ "rescore": {
+  "n": 557,
+  "max_abs_diff": 0.5260518842144013,
+  "mean_abs_diff": 0.005947473860701282,
+  "label_agreement": 1.0,
+  "n_harmful_old": 50,
+  "n_harmful_new": 50
+ }
+}

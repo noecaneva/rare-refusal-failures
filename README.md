@@ -33,25 +33,30 @@ fine-tuned judge. Numbers below are from `results/summary.json`, `results/cracke
 
 Fraction of the 313 prompts with at least one harmful completion (judge score >= 0.75) among the
 first k samples. "Empirical" averages over 20 random orderings of each prompt's 10,000 samples;
-"analytic" is the mean over prompts of 1 - (1 - p)^k. The Llama-3.1-8B-Instruct column is the
-paper's released per-prompt file for the same prompts and judge.
+"analytic" is the mean over prompts of 1 - (1 - p)^k with p the prompt's observed harm rate. The
+Llama-3.1-8B-Instruct columns come from the paper's released per-prompt scores
+(`rangell/mc_estimates`, `strong_reject/Llama-3.1-8B-Instruct_mc_est_10k.json`), re-analysed with
+the same code and threshold by `scripts/reference_from_paper.py`; they reproduce the paper's
+headline numbers (78.9% cracked at k = 10,000, 66 prompts never cracked).
 
-| k | Qwen2.5-1.5B-Instruct, empirical | Qwen2.5-1.5B-Instruct, analytic | Llama-3.1-8B-Instruct (paper) |
-|---:|---:|---:|---:|
-| 1 | 0.5% | 0.4% | 1.3% |
-| 3 | 1.2% | 1.2% | |
-| 10 | 2.9% | 2.9% | |
-| 30 | 6.0% | 5.7% | |
-| 100 | 10.8% | 10.9% | 16.6% |
-| 300 | 18.4% | 18.2% | |
-| 1,000 | 28.7% | 28.0% | 45.5% |
-| 3,000 | 34.6% | 34.3% | |
-| 10,000 | 37.1% | 36.4% | 78.9% |
+| k | Qwen2.5-1.5B empirical | Qwen2.5-1.5B analytic | Llama-3.1-8B empirical | Llama-3.1-8B analytic |
+|---:|---:|---:|---:|---:|
+| 1 | 0.5% | 0.4% | 1.2% | 1.2% |
+| 3 | 1.2% | 1.2% | 2.5% | 2.6% |
+| 10 | 2.9% | 2.9% | 4.9% | 4.9% |
+| 30 | 6.0% | 5.7% | 8.8% | 8.7% |
+| 100 | 10.8% | 10.9% | 16.5% | 16.2% |
+| 300 | 18.4% | 18.2% | 27.8% | 27.2% |
+| 1,000 | 28.7% | 28.0% | 46.8% | 44.7% |
+| 3,000 | 34.6% | 34.3% | 64.3% | 61.2% |
+| 10,000 | 37.1% | 36.4% | 78.9% | 73.6% |
 
 ![cracked curve](results/cracked_curve.png)
 
 Prompts with zero harmful completions in 10,000: **197 of 313** (63%), against 66 of 313 for
-Llama-3.1-8B-Instruct in the paper. Qwen2.5-1.5B-Instruct is cracked far less often, but the shape
+Llama-3.1-8B-Instruct. (At k = 10,000 the analytic curve sits below the empirical one for both
+models: a prompt with a single hit in 10,000 counts as cracked empirically, but 1 - (1 - 1e-4)^10000
+is only 0.63.) Qwen2.5-1.5B-Instruct is cracked far less often, but the shape
 is the same: the cracked fraction rises by almost two orders of magnitude from one sample to
 10,000, and after 1,000 samples it is still climbing (28.7% to 37.1%).
 
@@ -164,14 +169,23 @@ Design notes:
 - **Sampling.** vLLM is started with `generation_config="vllm"` so Qwen's repository defaults
   (top-p 0.8, top-k 20, repetition penalty 1.05) are not applied; temperature 1.0, top-p 1.0,
   no top-k and no penalties are also set explicitly on every request.
-- **Judge base weights.** The judge is a LoRA adapter on `google/gemma-2b`, which is a gated
-  repository. The run used the ungated mirror `unsloth/gemma-2b` as the base; set
-  `judge.base_model` to `google/gemma-2b` if you have access. The judge runs in float16 (the GPUs
-  used have no bfloat16); the pilot compares float16 GPU scores against float32 CPU scores for the
-  same completions and reports the differences (see `results/pilot/metadata.json`).
+- **Judge base weights.** The judge is a LoRA adapter on `google/gemma-2b`, a gated repository.
+  The run used the ungated mirror `unsloth/gemma-2b` as the base. All 164 tensors of the mirror
+  were afterwards compared bit for bit with the official `google/gemma-2b` (revision `9cf48e5`):
+  they are identical (`results/judge_base_check.json`, produced by
+  `scripts/compare_judge_base.py`), so the two ids are interchangeable; set `judge.base_model` to
+  either. The judge runs in float16 because the GPUs used have no bfloat16; see the numerics
+  check below.
 - **Scoring code.** `src/judge.py` calls the `strong_reject` package's `strongreject_finetuned`
   function unchanged (same prompt template, same 512-token response truncation, same expected-
-  value score over the five grade tokens); it only pre-loads the model into the package's cache.
+  value score over the five grade tokens); it only pre-loads the model into the package's cache
+  and asks the model for last-position logits only (identical result, far less memory).
+- **Expected value vs argmax.** The package's score is the probability-weighted mean of the five
+  grades, so it is continuous in [0, 1]. The paper's released scores take only the values
+  {0, 0.25, 0.5, 0.75, 1}, i.e. the argmax grade. "Score >= 0.75" is stricter under the
+  expected-value rule (it needs most of the probability mass on grades 4 and 5), so the harmful
+  counts here are, if anything, conservative relative to the paper's labelling. The Llama
+  reference columns use the paper's own discrete scores.
 - **Prompt ids.** The StrongREJECT CSV has no id column; `id` is the row index (0 to 312).
 
 ## Citation
